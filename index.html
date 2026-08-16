@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sürtünme Günlüğü</title>
 
 <!-- iOS kurulum metadatası: bunlardan biri eksikse ana ekran uygulaması bozulur -->
@@ -22,10 +22,10 @@
 <main>
 
   <!-- YAKALAMA: ekranın üst yarısı. Tek dokunuş başlat, tek dokunuş bitir. -->
-  <button id="kayitBtn" class="kayit" type="button" aria-label="Kaydet">
+  <button id="kayitBtn" class="kayit" type="button">
     <svg class="nokta" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
     <span class="etiket">Kaydet</span>
-    <span class="sure" id="sure"></span>
+    <span class="sure" id="sure" aria-hidden="true"></span>
   </button>
   <p class="uyari" id="uyari" role="status"></p>
 
@@ -33,7 +33,7 @@
   <form id="yaziForm" autocomplete="off">
     <input id="yaziGiris" type="text" placeholder="Bir şey yaz…" enterkeyhint="send"
            autocapitalize="sentences" autocorrect="off" spellcheck="false" aria-label="Bir şey yaz…">
-    <button id="gonderBtn" type="submit" aria-label="Kaydet">
+    <button id="gonderBtn" type="submit" aria-label="Gönder">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13M12 5l7 7-7 7"/></svg>
     </button>
   </form>

@@ -1,4 +1,4 @@
-const CACHE = 'gunluk-v2'; // HER DEPLOY'DA BUNU ARTIR (v2, v3...) — yoksa telefonunda eski sürüm açılmaya devam eder.
+const CACHE = 'gunluk-v4'; // HER DEPLOY'DA BUNU ARTIR (v2, v3...) — yoksa telefonunda eski sürüm açılmaya devam eder.
 
 const KABUK = [
   './',

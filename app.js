@@ -8,7 +8,7 @@ function db(){
     const i = indexedDB.open(DB_ADI, 1);
     i.onupgradeneeded = () => i.result.createObjectStore(DEPO, { keyPath:'id', autoIncrement:true });
     i.onsuccess = () => coz(i.result);
-    i.onerror   = () => red(i.error);
+    i.onerror   = () => { _db = null; red(i.error); };   // hatayı önbelleğe alma: sonraki deneme yeniden açsın
   });
   return _db;
 }
@@ -19,10 +19,10 @@ function bekle(i){ return new Promise((coz,red)=>{ i.onsuccess=()=>coz(i.result)
 async function ekle(k){ return bekle((await depo('readwrite')).add(k)); }
 async function tumKayitlar(){ return bekle((await depo('readonly')).getAll()); }
 async function silKayit(id){ return bekle((await depo('readwrite')).delete(id)); }
-async function yamaKonum(id, konum){
+async function yama(id, yeni){                        // konum yaması ve ad verme için
   const k = await bekle((await depo('readonly')).get(id));
   if(!k) return;
-  k.konum = konum;
+  Object.assign(k, yeni);
   await bekle((await depo('readwrite')).put(k));
 }
 
@@ -66,11 +66,16 @@ async function kaydaBasla(){
   konumSozu = konumAl();                          // paralel; kaydı asla bekletmez
   try{ akis = await navigator.mediaDevices.getUserMedia({ audio:true }); }
   catch(e){ akis=null; mesgul=false; uyar('mikrofon izni yok — yazarak kaydedebilirsin'); return; }
-  recorder = new MediaRecorder(akis);
-  parcalar = [];
-  recorder.ondataavailable = e => { if(e.data && e.data.size) parcalar.push(e.data); };
-  recorder.onstop = sesiYaz;
-  recorder.start();
+  try{                                            // iOS'ta MediaRecorder kurulumu/başlatması patlayabiliyor
+    recorder = new MediaRecorder(akis);
+    parcalar = [];
+    recorder.ondataavailable = e => { if(e.data && e.data.size) parcalar.push(e.data); };
+    recorder.onstop = sesiYaz;
+    recorder.start();
+  }catch(e){                                      // yakalamazsak buton ölü kalır ve mikrofon ışığı sönmez
+    recorder = null; mikrofonuBirak(); mesgul = false;
+    uyar('ses kaydı başlatılamadı — yazarak kaydedebilirsin'); return;
+  }
   mesgul = false;
   t0 = Date.now();
   kayitBtn.classList.add('kaydediyor');
@@ -83,22 +88,30 @@ async function kaydaBasla(){
   }, 250);
 }
 
-function kaydiBitir(){
-  if(!recorder) return;
-  try{ recorder.stop(); }catch(e){}                // devamı onstop -> sesiYaz
-  clearInterval(sayac); sayac=null;
+// Yalnızca kullanıcı durdurunca değil, kayıt kendiliğinden bitince de çağrılmalı
+// (telefon çaldı, mikrofonu başka uygulama aldı, kulaklık koptu) — yoksa buton asılı kalır.
+function arayuzuSifirla(){
+  clearInterval(sayac); sayac = null;
   kayitBtn.classList.remove('kaydediyor');
   etiketEl.textContent = 'Kaydet';
   sureEl.textContent = '';
 }
+function kaydiBitir(){
+  if(!recorder) return;
+  try{ recorder.stop(); }catch(e){}                // devamı onstop -> sesiYaz
+  arayuzuSifirla();
+}
 
 async function sesiYaz(){
+  arayuzuSifirla();                                // kayıt dışarıdan bittiyse arayüzü kurtar
   const tip = (recorder && recorder.mimeType) || '';   // Safari audio/mp4, Chrome audio/webm — asla sabit yazma
   const ses = new Blob(parcalar, { type:tip });
   mikrofonuBirak();
   recorder = null; parcalar = [];
   if(!ses.size) return;
-  const id = await ekle({ ts:Date.now(), metin:'', konum:null, ses, sesTip:tip });  // önce yaz, sonra düşün
+  let id;
+  try{ id = await ekle({ ts:Date.now(), metin:'', konum:null, ses, sesTip:tip }); }  // önce yaz, sonra düşün
+  catch(e){ uyar('ses kaydedilemedi (' + e.name + ') — depolama dolu olabilir'); return; }
   ciz();
   konumuIsle(id);
 }
@@ -111,7 +124,7 @@ function mikrofonuBirak(){
 function konumuIsle(id){
   const s = konumSozu || konumAl();
   konumSozu = null;
-  s.then(k => { if(k) yamaKonum(id,k).then(ciz); });   // gelmezse görünür hiçbir şey olmaz
+  s.then(k => { if(k) yama(id,{konum:k}).then(ciz); });  // gelmezse görünür hiçbir şey olmaz
 }
 
 /* ---------- Yazarak yakalama ---------- */
@@ -121,9 +134,14 @@ yaziForm.addEventListener('submit', async e => {
   if(!metin) return;
   yaziGiris.value = '';                            // anında temizle
   const konumS = konumAl();                        // paralel
-  const id = await ekle({ ts:Date.now(), metin, konum:null, ses:null, sesTip:'' });
+  let id;
+  try{ id = await ekle({ ts:Date.now(), metin, konum:null, ses:null, sesTip:'' }); }
+  catch(err){                                      // yazılamadıysa metni SAKIN yutma, girişe geri koy
+    yaziGiris.value = metin;
+    uyar('kaydedilemedi (' + err.name + ') — metnin girişte duruyor'); return;
+  }
   ciz();
-  konumS.then(k => { if(k) yamaKonum(id,k).then(ciz); });
+  konumS.then(k => { if(k) yama(id,{konum:k}).then(ciz); });
 });
 
 /* ---------- Bugünün kayıtları ---------- */
@@ -134,31 +152,65 @@ const ayniGun = ts => {
 };
 const saatOf = ts => new Date(ts).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
 
+let cizimSira = 0;
 async function ciz(){
+  if(liste.querySelector('.duzenle')) return;    // ad yazılırken listeyi altından çekme
+  const sira = ++cizimSira;
   const tum = await tumKayitlar();
+  if(sira !== cizimSira) return;                 // daha yeni bir çizim başladıysa bunu at
   gunun = tum.filter(k => ayniGun(k.ts)).sort((a,b) => b.ts-a.ts);   // en yeni üstte
   baslikEl.textContent = 'bugün · ' + gunun.length + ' kayıt';
   bosEl.toggleAttribute('hidden', gunun.length > 0);
-  // Çalan kaydın id'sini koru: yeniden çizim dinlemeyi yarıda kesmesin.
+  // Çalan ve açık satırı koru: arka planda gelen konum yaması bunları kapatmasın.
   const calanKayit = (calanBtn && !calar.paused) ? calanBtn.closest('.kayitSatir').dataset.id : null;
+  const acikKayit = liste.querySelector('.kayitSatir.acik') ? liste.querySelector('.kayitSatir.acik').dataset.id : null;
   calanBtn = null;
   liste.textContent = '';
   for(const k of gunun){
     const li = sablon.content.firstElementChild.cloneNode(true);
     li.dataset.id = k.id;
     li.querySelector('.saat').textContent = saatOf(k.ts);
-    li.querySelector('.metin').textContent = k.metin || '';
+    const metinEl = li.querySelector('.metin');
+    metinEl.textContent = k.metin || '';
+    metinEl.addEventListener('click', () => { if(!li.classList.contains('acik')) adlandir(li, k); });
     const oyn = li.querySelector('.oynat');
     // .hidden ÖZELLİĞİ SVG'de yok; her ikisinde de NİTELİĞİ değiştir.
     oyn.toggleAttribute('hidden', !k.ses);
     if(k.ses) oyn.addEventListener('click', () => oynat(k, oyn));
     li.querySelector('.pin').toggleAttribute('hidden', !k.konum);   // pin yalnızca konum varsa
     if(String(k.id) === calanKayit){ calanBtn = oyn; oyn.classList.add('calisiyor'); oyn.querySelector('.ucgen').setAttribute('d', DURDUR_D); }
+    if(String(k.id) === acikKayit) li.classList.add('acik');
     li.querySelector('.sil').addEventListener('click', () => silOnay(li, k.id));
     kaydirmaBagla(li);
     liste.appendChild(li);
   }
   if(calanKayit && !calanBtn) durdur();          // çalan kayıt silindiyse sesi de kes
+}
+
+/* ---------- Ad verme: kaydın `metin` alanını yerinde düzenle ---------- */
+function adlandir(li, k){
+  const alan = li.querySelector('.metin');
+  if(!alan) return;
+  const gir = document.createElement('input');
+  gir.type = 'text'; gir.className = 'duzenle'; gir.enterKeyHint = 'done'; gir.name = 'ad';
+  gir.value = k.metin || ''; gir.placeholder = 'Ad ver…'; gir.setAttribute('aria-label','Ad ver…');
+  alan.replaceWith(gir);
+  gir.focus(); gir.setSelectionRange(gir.value.length, gir.value.length);
+  let bitti = false;
+  const bitir = async kaydet => {
+    if(bitti) return; bitti = true;
+    const yeni = gir.value.trim();
+    gir.replaceWith(alan);                       // önce girişi kaldır ki ciz() çalışabilsin
+    if(kaydet && yeni !== (k.metin || '')){
+      try{ await yama(k.id, { metin:yeni }); }
+      catch(e){ uyar('ad kaydedilemedi (' + e.name + ')'); }
+    }
+    ciz();
+  };
+  gir.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === 'Escape'){ e.preventDefault(); bitir(e.key === 'Enter'); }
+  });
+  gir.addEventListener('blur', () => bitir(true));
 }
 
 /* ---------- Satır içi oynatma ---------- */
