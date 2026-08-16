@@ -1,19 +1,53 @@
-/* Sürtünme Günlüğü — sakin, koyu varsayılan, tek vurgu rengi. */
+/* Sürtünme Günlüğü — sakin, koyu varsayılan, tek vurgu rengi.
+   Kontroller "sıvı cam": yarı saydam dolgu + arka plan bulanıklığı + kenar ışığı.
+   Camın kıracak bir şeyi olsun diye zeminde noktalı bir ızgara var. */
 
 :root{
-  --zemin:#0e0e10;      /* koyu tema varsayılan */
+  --zemin:#0e0e10;
   --kat:#191a1d;
   --yazi:#ecebe8;
   --soluk:#8b8a87;
-  --cizgi:#2a2b2f;
+  --cizgi:#26272b;
   --vurgu:#e5533d;
   --vurguYazi:#ff7a63;
+
+  /* cam katmanı */
+  --nokta:rgba(255,255,255,.07);
+  --camDolgu:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
+  --camKenar:rgba(255,255,255,.14);
+  --camIcIsik:rgba(255,255,255,.24);
+  --camIcGolge:rgba(0,0,0,.22);
+  --camGolge:0 8px 26px rgba(0,0,0,.34);
+  --bulanik:blur(14px) saturate(170%);
+  /* dolgulu kırmızı yüzeylerde kullanılan hafif parıltı: ağır cam dolgusu rengi yıkıyor */
+  --camParilti:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.05));
+
+  /* kırmızı cam: yakalama kontrolleri */
+  --kirmiziCam:linear-gradient(180deg,rgba(235,95,70,.56),rgba(198,56,38,.34));
+  --kirmiziIsik:radial-gradient(120% 78% at 50% 36%,rgba(255,138,108,.30),transparent 62%);
+  --kirmiziDolgu:linear-gradient(180deg,rgba(240,102,78,.72),rgba(206,62,42,.66));
+  --kirmiziKenar:rgba(255,150,132,.30);
+  --kirmiziParilti:0 12px 34px rgba(229,83,61,.24);
 }
 @media (prefers-color-scheme: light){
   :root{
     --zemin:#faf9f7; --kat:#efeeea; --yazi:#16161a;
-    --soluk:#6d6c68; --cizgi:#dedcd6;
+    --soluk:#6d6c68; --cizgi:#e4e2dc;
     --vurgu:#d1442e; --vurguYazi:#a6392a;
+
+    --nokta:rgba(0,0,0,.07);
+    --camDolgu:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.40));
+    --camKenar:rgba(255,255,255,.90);
+    --camIcIsik:rgba(255,255,255,.95);
+    --camIcGolge:rgba(0,0,0,.05);
+    --camGolge:0 8px 24px rgba(40,26,20,.12);
+
+    --camParilti:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.07));
+    --kirmiziCam:linear-gradient(180deg,rgba(226,88,64,.40),rgba(203,62,42,.24));
+    --kirmiziIsik:radial-gradient(120% 78% at 50% 36%,rgba(255,164,138,.36),transparent 62%);
+    --kirmiziDolgu:linear-gradient(180deg,rgba(219,78,55,.96),rgba(186,50,31,.96));
+    --kirmiziKenar:rgba(209,68,46,.32);
+    --kirmiziParilti:0 12px 30px rgba(209,68,46,.18);
   }
 }
 
@@ -21,9 +55,15 @@
    tarayıcının varsayılan [hidden] kuralını yenebiliyor. */
 [hidden]{display:none !important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:var(--zemin);color:var(--yazi)}
+/* Tarayıcının buton varsayılanı yarı saydam dolgunun altından sızıyor (iOS'ta da) */
+button{-webkit-appearance:none;appearance:none;background-color:transparent;font:inherit}
+html{background:var(--zemin)}
 body{
+  margin:0;padding:0;min-height:100vh;min-height:100dvh;color:var(--yazi);
   font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background-color:var(--zemin);
+  background-image:radial-gradient(circle at 1px 1px,var(--nokta) 1px,transparent 1.6px);
+  background-size:24px 24px;
   overscroll-behavior-y:none;
 }
 main{
@@ -32,78 +72,118 @@ main{
           calc(env(safe-area-inset-bottom) + 18px) calc(env(safe-area-inset-left) + 14px);
 }
 
+/* ---- Ortak cam yüzey ---- */
+.kayit,#gonderBtn,#yaziGiris,.oynat{
+  background-color:transparent;
+  background-image:var(--camDolgu);
+  -webkit-backdrop-filter:var(--bulanik);
+  backdrop-filter:var(--bulanik);
+  border:1px solid var(--camKenar);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),inset 0 -1px 0 var(--camIcGolge),var(--camGolge);
+}
+/* backdrop-filter yoksa cam yerine düz katman */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .kayit,#gonderBtn,#yaziGiris,.oynat{background-color:var(--kat)}
+}
+
 /* ---- Kayıt butonu: ekranın üst yarısı, başparmakla ıskalanamaz ---- */
 .kayit{
+  position:relative;isolation:isolate;
   -webkit-appearance:none;appearance:none;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   width:100%;height:46vh;height:46dvh;min-height:220px;
-  border:1px solid var(--cizgi);border-radius:24px;
-  background:var(--kat);color:var(--yazi);
-  font:inherit;font-size:19px;font-weight:500;
+  border-radius:40px;border-color:var(--kirmiziKenar);
+  background-image:var(--kirmiziIsik),var(--camParilti),var(--kirmiziCam);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),inset 0 -1px 0 var(--camIcGolge),var(--kirmiziParilti);
+  color:var(--yazi);
+  font:inherit;font-size:19px;font-weight:500;letter-spacing:-.02em;
   cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
-  transition:background .12s linear,border-color .12s linear;
+  transition:transform .14s ease,box-shadow .18s ease,background-image .18s linear;
 }
-.kayit:active{background:var(--cizgi)}
-.kayit .nokta{width:64px;height:64px;fill:var(--vurgu)}
-.kayit .sure{font-variant-numeric:tabular-nums;color:var(--soluk);font-size:15px;min-height:1em}
-.kayit.kaydediyor{background:var(--vurgu);border-color:var(--vurgu);color:#fff}
-.kayit.kaydediyor .nokta{fill:#fff;animation:nabiz 1.4s ease-in-out infinite}
-.kayit.kaydediyor .nokta circle{transform-origin:center}
-.kayit.kaydediyor .sure{color:rgba(255,255,255,.85)}
-@keyframes nabiz{0%,100%{opacity:1}50%{opacity:.35}}
+/* üstten gelen ışığın parıltısı */
+.kayit::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(163deg,rgba(255,255,255,.20),rgba(255,255,255,.05) 26%,transparent 52%);
+}
+.kayit:active{transform:scale(.985);box-shadow:inset 0 1px 0 var(--camIcIsik),0 4px 14px rgba(229,83,61,.20)}
+.kayit .nokta{width:74px;height:74px;fill:#ff6a4d;filter:drop-shadow(0 0 22px rgba(255,106,77,.55))}
+.kayit .sure{font-variant-numeric:tabular-nums;color:var(--soluk);font-size:15px;min-height:1em;letter-spacing:0}
+
+.kayit.kaydediyor{
+  border-color:rgba(255,196,182,.45);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.05)),
+                   linear-gradient(180deg,rgba(242,99,74,.94),rgba(198,56,38,.94));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 16px 44px rgba(229,83,61,.42);
+  color:#fff;
+}
+.kayit.kaydediyor .nokta{fill:#fff;filter:none;animation:nabiz 1.4s ease-in-out infinite}
+.kayit.kaydediyor .sure{color:rgba(255,255,255,.9)}
+@keyframes nabiz{0%,100%{opacity:1}50%{opacity:.32}}
 @media (prefers-reduced-motion:reduce){.kayit.kaydediyor .nokta{animation:none}}
 
-.uyari{margin:8px 2px 0;min-height:1em;font-size:13px;color:var(--vurguYazi)}
+.uyari{margin:10px 4px 0;min-height:1em;font-size:13px;color:var(--vurguYazi)}
 
 /* ---- Yazı girişi ---- */
-#yaziForm{display:flex;gap:8px;margin:12px 0 22px}
+#yaziForm{display:flex;gap:10px;margin:14px 0 24px}
 #yaziGiris{
-  flex:1;min-width:0;height:48px;padding:0 14px;
-  border:1px solid var(--cizgi);border-radius:14px;
-  background:var(--kat);color:var(--yazi);font:inherit;font-size:16px;
+  flex:1;min-width:0;height:52px;padding:0 20px;border-radius:999px;
+  color:var(--yazi);font:inherit;font-size:16px;letter-spacing:-.01em;
 }
 #yaziGiris::placeholder{color:var(--soluk)}
-#yaziGiris:focus{outline:2px solid var(--vurgu);outline-offset:-1px}
-#gonderBtn{
-  flex:0 0 48px;width:48px;height:48px;display:grid;place-items:center;
-  border:1px solid var(--cizgi);border-radius:14px;background:var(--kat);cursor:pointer;
+#yaziGiris:focus{
+  outline:none;border-color:var(--kirmiziKenar);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),0 0 0 3px rgba(229,83,61,.22),var(--camGolge);
 }
-#gonderBtn svg{width:22px;height:22px;fill:none;stroke:var(--vurgu);stroke-width:2;
+#gonderBtn{
+  flex:0 0 52px;width:52px;height:52px;display:grid;place-items:center;
+  border-radius:50%;cursor:pointer;
+  border-color:var(--kirmiziKenar);
+  background-image:var(--camParilti),var(--kirmiziDolgu);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),inset 0 -1px 0 var(--camIcGolge),var(--kirmiziParilti);
+  transition:transform .14s ease;
+}
+#gonderBtn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;
   stroke-linecap:round;stroke-linejoin:round}
-#gonderBtn:active{background:var(--cizgi)}
+#gonderBtn:active{transform:scale(.94)}
 
 /* ---- Bugünün kayıtları ---- */
-h1{margin:0 2px 8px;font-size:13px;font-weight:500;letter-spacing:.02em;color:var(--soluk)}
-.bos{margin:18px 2px;color:var(--soluk);font-size:15px}
+h1{margin:0 4px 10px;font-size:13px;font-weight:500;letter-spacing:.01em;color:var(--soluk)}
+.bos{margin:20px 4px;color:var(--soluk);font-size:15px}
 ul{list-style:none;margin:0;padding:0}
 
 .kayitSatir{position:relative;overflow:hidden;border-bottom:1px solid var(--cizgi)}
-.kaydir{
-  position:relative;z-index:1;display:flex;align-items:center;gap:10px;
-  min-height:52px;padding:6px 2px;background:var(--zemin);
-  transition:transform .16s ease-out;touch-action:pan-y;
-}
-.kayitSatir.acik .kaydir{transform:translateX(-92px)}
+.kaydir{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 2px;touch-action:pan-y}
 .saat{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:13px;color:var(--soluk)}
-.metin{flex:1;min-width:0;word-break:break-word;font-size:16px}
-.pin{flex:0 0 auto;width:15px;height:15px;fill:var(--soluk);stroke:none;opacity:.9}
+.metin{flex:1;min-width:0;word-break:break-word;font-size:16px;letter-spacing:-.01em}
+.pin{flex:0 0 auto;width:15px;height:15px;fill:var(--soluk);opacity:.9}
 .oynat{
-  flex:0 0 44px;width:44px;height:44px;margin:-4px 0;display:grid;place-items:center;
-  border:1px solid var(--cizgi);border-radius:50%;background:transparent;cursor:pointer;
+  flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;
+  border-radius:50%;cursor:pointer;transition:transform .14s ease,box-shadow .18s ease;
 }
-.oynat svg{width:18px;height:18px;fill:var(--vurgu)}
-.oynat.calisiyor{border-color:var(--vurgu)}
+.oynat svg{width:17px;height:17px;fill:var(--vurgu);margin-left:2px}
+.oynat:active{transform:scale(.92)}
+.oynat.calisiyor{border-color:var(--kirmiziKenar);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),0 0 0 3px rgba(229,83,61,.20)}
+.oynat.calisiyor svg{margin-left:0}
 
+/* Silme paneli: satırı kaydırmak yerine sağdan içeri süzülür (saat/metin kırpılmasın) */
 .sil{
-  position:absolute;top:0;right:0;z-index:0;
-  width:92px;height:100%;min-height:44px;border:0;
-  background:var(--vurgu);color:#fff;font:inherit;font-size:15px;cursor:pointer;
+  position:absolute;top:5px;bottom:5px;right:0;z-index:2;
+  width:96px;min-height:44px;border-radius:16px;
+  border:1px solid var(--kirmiziKenar);
+  background-image:var(--camParilti),var(--kirmiziDolgu);
+  box-shadow:inset 0 1px 0 var(--camIcIsik),var(--kirmiziParilti);
+  color:#fff;font:inherit;font-size:15px;font-weight:500;letter-spacing:-.01em;cursor:pointer;
+  transform:translateX(calc(100% + 8px));
+  transition:transform .18s ease-out;
 }
-.sil.onay{background:#8f2c1c}
+.kayitSatir.acik .sil{transform:translateX(0)}
+.sil.onay{background-image:var(--camParilti),linear-gradient(180deg,rgba(154,40,24,.97),rgba(112,24,13,.97))}
 
 /* ---- Kaçış kapısı ---- */
 .disa{
-  display:inline-block;margin-top:26px;padding:12px 2px;min-height:44px;
-  color:var(--soluk);font-size:13px;text-decoration:underline;text-underline-offset:3px;
+  display:inline-block;margin-top:28px;padding:12px 4px;min-height:44px;
+  color:var(--soluk);font-size:13px;text-decoration:underline;text-underline-offset:4px;
+  text-decoration-color:var(--cizgi);
 }
-.disa:active{color:var(--vurguYazi)}
+.disa:active{color:var(--vurguYazi);text-decoration-color:var(--vurguYazi)}
