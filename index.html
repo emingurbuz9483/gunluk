@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Sürtünme Günlüğü</title>
+
+<!-- iOS kurulum metadatası: bunlardan biri eksikse ana ekran uygulaması bozulur -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Günlük">
+<link rel="apple-touch-icon" href="./icons/192.png">
+<link rel="icon" href="./icons/192.png">
+
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main>
+
+  <!-- YAKALAMA: ekranın üst yarısı. Tek dokunuş başlat, tek dokunuş bitir. -->
+  <button id="kayitBtn" class="kayit" type="button" aria-label="Kaydet">
+    <svg class="nokta" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+    <span class="etiket">Kaydet</span>
+    <span class="sure" id="sure"></span>
+  </button>
+  <p class="uyari" id="uyari" role="status"></p>
+
+  <!-- Yazmayı tercih ettiğimde: tek satır, gönder ve anında temizle -->
+  <form id="yaziForm" autocomplete="off">
+    <input id="yaziGiris" type="text" placeholder="Bir şey yaz…" enterkeyhint="send"
+           autocapitalize="sentences" autocorrect="off" spellcheck="false" aria-label="Bir şey yaz…">
+    <button id="gonderBtn" type="submit" aria-label="Kaydet">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h13M12 5l7 7-7 7"/></svg>
+    </button>
+  </form>
+
+  <h1 id="baslik">bugün · 0 kayıt</h1>
+  <ul id="liste"></ul>
+  <p id="bos" class="bos">Bugün henüz bir şey yok.</p>
+
+  <a href="#" id="disaAktar" class="disa">tümünü JSON olarak kopyala</a>
+</main>
+
+<!-- Liste satırlarının şablonu; app.js bunu klonlar -->
+<template id="satirSablon">
+  <li class="kayitSatir">
+    <div class="kaydir">
+      <span class="saat"></span>
+      <button class="oynat" type="button" aria-label="Dinle" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="ucgen" d="M8 5l11 7-11 7z"/></svg>
+      </button>
+      <span class="metin"></span>
+      <svg class="pin" viewBox="0 0 24 24" aria-hidden="true" hidden>
+        <path d="M12 22s7-6.4 7-12a7 7 0 1 0-14 0c0 5.6 7 12 7 12z"/><circle cx="12" cy="10" r="2.4"/>
+      </svg>
+    </div>
+    <button class="sil" type="button">Sil</button>
+  </li>
+</template>
+
+<script src="./app.js"></script>
+</body>
+</html>

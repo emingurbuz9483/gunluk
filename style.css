@@ -1,0 +1,109 @@
+/* Sürtünme Günlüğü — sakin, koyu varsayılan, tek vurgu rengi. */
+
+:root{
+  --zemin:#0e0e10;      /* koyu tema varsayılan */
+  --kat:#191a1d;
+  --yazi:#ecebe8;
+  --soluk:#8b8a87;
+  --cizgi:#2a2b2f;
+  --vurgu:#e5533d;
+  --vurguYazi:#ff7a63;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --zemin:#faf9f7; --kat:#efeeea; --yazi:#16161a;
+    --soluk:#6d6c68; --cizgi:#dedcd6;
+    --vurgu:#d1442e; --vurguYazi:#a6392a;
+  }
+}
+
+/* [hidden] her koşulda gizlesin: display:grid gibi kurallar ve SVG öğeleri
+   tarayıcının varsayılan [hidden] kuralını yenebiliyor. */
+[hidden]{display:none !important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--zemin);color:var(--yazi)}
+body{
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior-y:none;
+}
+main{
+  max-width:640px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px)
+          calc(env(safe-area-inset-bottom) + 18px) calc(env(safe-area-inset-left) + 14px);
+}
+
+/* ---- Kayıt butonu: ekranın üst yarısı, başparmakla ıskalanamaz ---- */
+.kayit{
+  -webkit-appearance:none;appearance:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:46vh;height:46dvh;min-height:220px;
+  border:1px solid var(--cizgi);border-radius:24px;
+  background:var(--kat);color:var(--yazi);
+  font:inherit;font-size:19px;font-weight:500;
+  cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  transition:background .12s linear,border-color .12s linear;
+}
+.kayit:active{background:var(--cizgi)}
+.kayit .nokta{width:64px;height:64px;fill:var(--vurgu)}
+.kayit .sure{font-variant-numeric:tabular-nums;color:var(--soluk);font-size:15px;min-height:1em}
+.kayit.kaydediyor{background:var(--vurgu);border-color:var(--vurgu);color:#fff}
+.kayit.kaydediyor .nokta{fill:#fff;animation:nabiz 1.4s ease-in-out infinite}
+.kayit.kaydediyor .nokta circle{transform-origin:center}
+.kayit.kaydediyor .sure{color:rgba(255,255,255,.85)}
+@keyframes nabiz{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.kayit.kaydediyor .nokta{animation:none}}
+
+.uyari{margin:8px 2px 0;min-height:1em;font-size:13px;color:var(--vurguYazi)}
+
+/* ---- Yazı girişi ---- */
+#yaziForm{display:flex;gap:8px;margin:12px 0 22px}
+#yaziGiris{
+  flex:1;min-width:0;height:48px;padding:0 14px;
+  border:1px solid var(--cizgi);border-radius:14px;
+  background:var(--kat);color:var(--yazi);font:inherit;font-size:16px;
+}
+#yaziGiris::placeholder{color:var(--soluk)}
+#yaziGiris:focus{outline:2px solid var(--vurgu);outline-offset:-1px}
+#gonderBtn{
+  flex:0 0 48px;width:48px;height:48px;display:grid;place-items:center;
+  border:1px solid var(--cizgi);border-radius:14px;background:var(--kat);cursor:pointer;
+}
+#gonderBtn svg{width:22px;height:22px;fill:none;stroke:var(--vurgu);stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+#gonderBtn:active{background:var(--cizgi)}
+
+/* ---- Bugünün kayıtları ---- */
+h1{margin:0 2px 8px;font-size:13px;font-weight:500;letter-spacing:.02em;color:var(--soluk)}
+.bos{margin:18px 2px;color:var(--soluk);font-size:15px}
+ul{list-style:none;margin:0;padding:0}
+
+.kayitSatir{position:relative;overflow:hidden;border-bottom:1px solid var(--cizgi)}
+.kaydir{
+  position:relative;z-index:1;display:flex;align-items:center;gap:10px;
+  min-height:52px;padding:6px 2px;background:var(--zemin);
+  transition:transform .16s ease-out;touch-action:pan-y;
+}
+.kayitSatir.acik .kaydir{transform:translateX(-92px)}
+.saat{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:13px;color:var(--soluk)}
+.metin{flex:1;min-width:0;word-break:break-word;font-size:16px}
+.pin{flex:0 0 auto;width:15px;height:15px;fill:var(--soluk);stroke:none;opacity:.9}
+.oynat{
+  flex:0 0 44px;width:44px;height:44px;margin:-4px 0;display:grid;place-items:center;
+  border:1px solid var(--cizgi);border-radius:50%;background:transparent;cursor:pointer;
+}
+.oynat svg{width:18px;height:18px;fill:var(--vurgu)}
+.oynat.calisiyor{border-color:var(--vurgu)}
+
+.sil{
+  position:absolute;top:0;right:0;z-index:0;
+  width:92px;height:100%;min-height:44px;border:0;
+  background:var(--vurgu);color:#fff;font:inherit;font-size:15px;cursor:pointer;
+}
+.sil.onay{background:#8f2c1c}
+
+/* ---- Kaçış kapısı ---- */
+.disa{
+  display:inline-block;margin-top:26px;padding:12px 2px;min-height:44px;
+  color:var(--soluk);font-size:13px;text-decoration:underline;text-underline-offset:3px;
+}
+.disa:active{color:var(--vurguYazi)}
